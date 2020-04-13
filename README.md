@@ -102,19 +102,19 @@ $ grpcurl -plaintext -d '@' \
 Benchmark old server (`127.0.0.1:10000`) with ghz + proto files for 20 seconds:
 
 ```bash
-$ $ ghz --insecure --data=@  -z 20s  \
-      --import-paths ./routeguide    \
-      --proto route_guide.proto      \
+$ ghz --insecure --data=@  -z 20s  \
+      --import-paths ./routeguide  \
+      --proto route_guide.proto    \
       --call routeguide.RouteGuide.RecordRoute  \
       127.0.0.1:10000  \
-    < testdata.json
+  < testdata.json
 ```
 
 Benchmark new server (`127.0.0.1:20000`) with ghz for 20 seconds:
 
 ```bash
 $ ghz --insecure --data=@  -z 20s  \
-    --call routeguide.RouteGuide.RecordRoute  \
-    127.0.0.1:20000  \
+      --call routeguide.RouteGuide.RecordRoute  \
+      127.0.0.1:20000  \
   < testdata.json
 ```
