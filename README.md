@@ -2,6 +2,8 @@
 
 A simple demo for 2 useful gRPC tools: [gRPCurl](https://github.com/fullstorydev/grpcurl) and [ghz](https://github.com/bojand/ghz).
 
+An [article](https://william-yeh.net/post/2020/04/grpc-testing-tools/) (in Chinese) for this demo is also available.
+
 
 ## About the demo code
 
@@ -13,6 +15,8 @@ Directories and files:
 - `server/`: server code; copied from "gRPC-Go".
 
 - `server-new/`: modified server code with reflection.
+- `mock/`: mock server with [grpc-mock](https://github.com/William-Yeh/docker-grpc-mock).
+
 - `testdata.dat`: 100 test data for gRPCurl.
 - `testdata.json`: 100 test data for ghz.
 
@@ -47,16 +51,26 @@ total 50408
 
 ## Run servers
 
-Run old server at `127.0.0.1:10000`:
+Run the old server at `127.0.0.1:10000`:
 
 ```bash
 $ out/server
 ```
 
-Run new server at `127.0.0.1:20000`:
+Run the new server at `127.0.0.1:20000`:
 
 ```bash
 $ out/server-new
+```
+
+Run the mock server at `127.0.0.1:50051`:
+
+```
+$ docker run -tid \
+    --name mock --rm -p 50051:50051 \
+    -v $(pwd)/routeguide:/proto \
+    -v $(pwd)/mock:/mock        \
+    williamyeh/grpc-mock /mock/mock.js
 ```
 
 
@@ -64,7 +78,7 @@ $ out/server-new
 
 The old server doesn't support gRPC reflection, and clients should have knowledge of its interface definition in order to call it.
 
-Test old server (`127.0.0.1:10000`) with gRPCurl + proto files:
+Test the old server (`127.0.0.1:10000`) with gRPCurl + proto files:
 
 ```bash
 $ grpcurl -plaintext -d '@'    \
@@ -75,11 +89,26 @@ $ grpcurl -plaintext -d '@'    \
   < testdata.dat
 ```
 
+## Test with proto files against mock server
+
+The mock server with [grpc-mock](https://github.com/William-Yeh/docker-grpc-mock) doesn't support gRPC reflection, and clients should have knowledge of its interface definition in order to call it.
+
+Test the mock server (`127.0.0.1:50051`) with gRPCurl + proto files:
+
+```
+$ grpcurl -plaintext \
+    -d '{"latitude":407838351, "longitude":-746143763}' \
+    -import-path ./routeguide  \
+    -proto route_guide.proto   \
+    127.0.0.1:50051   \
+    routeguide.RouteGuide.GetFeature
+```
+
 ## Test without proto files
 
 The new server supports gRPC reflection, and clients don't need to have full knowledge of its interface definition in order to call it.
 
-Get interface of new server (`127.0.0.1:20000`) with gRPCurl:
+Get interface of the new server (`127.0.0.1:20000`) with gRPCurl:
 
 ```bash
 $ grpcurl -plaintext \
@@ -87,7 +116,7 @@ $ grpcurl -plaintext \
     describe
 ```
 
-Test new server (`127.0.0.1:20000`) with gRPCurl:
+Test the new server (`127.0.0.1:20000`) with gRPCurl:
 
 ```bash
 $ grpcurl -plaintext -d '@' \
@@ -99,7 +128,7 @@ $ grpcurl -plaintext -d '@' \
 
 ## Benchmark
 
-Benchmark old server (`127.0.0.1:10000`) with ghz + proto files for 20 seconds:
+Benchmark the old server (`127.0.0.1:10000`) with ghz + proto files for 20 seconds:
 
 ```bash
 $ ghz --insecure --data=@  -z 20s  \
@@ -110,7 +139,7 @@ $ ghz --insecure --data=@  -z 20s  \
   < testdata.json
 ```
 
-Benchmark new server (`127.0.0.1:20000`) with ghz for 20 seconds:
+Benchmark the new server (`127.0.0.1:20000`) with ghz for 20 seconds:
 
 ```bash
 $ ghz --insecure --data=@  -z 20s  \
